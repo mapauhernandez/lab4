@@ -6,18 +6,13 @@
    1.0.1
 
  Description
-   This is the sample for writing event checkers along with the event
-   checkers used in the basic framework test harness.
+ Event Checkers for the Morse Service application
 
  Notes
    Note the use of static variables in sample event checker to detect
    ONLY transitions.
 
- History
- When           Who     What/Why
- -------------- ---     --------
- 08/06/13 13:36 jec     initial version
-****************************************************************************/
+ ****************************************************************************/
 
 // this will pull in the symbolic definitions for events, which we will want
 // to post in response to detecting events
@@ -44,6 +39,7 @@
 // included in the module. It is only here as a sample to guide you in writing
 // your own event checkers
 #if 0
+
 /****************************************************************************
  Function
    Check4Lock
@@ -57,31 +53,30 @@
    will not compile, sample only
  Author
    J. Edward Carryer, 08/06/13, 13:48
-****************************************************************************/
-bool Check4Lock(void)
-{
-  static uint8_t  LastPinState = 0;
-  uint8_t         CurrentPinState;
-  bool            ReturnVal = false;
+ ****************************************************************************/
+bool Check4Lock(void) {
+    static uint8_t LastPinState = 0;
+    uint8_t CurrentPinState;
+    bool ReturnVal = false;
 
-  CurrentPinState = LOCK_PIN;
-  // check for pin high AND different from last time
-  // do the check for difference first so that you don't bother with a test
-  // of a port/variable that is not going to matter, since it hasn't changed
-  if ((CurrentPinState != LastPinState) &&
-      (CurrentPinState == LOCK_PIN_HI)) // event detected, so post detected event
-  {
-    ES_Event ThisEvent;
-    ThisEvent.EventType   = ES_LOCK;
-    ThisEvent.EventParam  = 1;
-    // this could be any of the service post functions, ES_PostListx or
-    // ES_PostAll functions
-    ES_PostAll(ThisEvent);
-    ReturnVal = true;
-  }
-  LastPinState = CurrentPinState; // update the state for next time
+    CurrentPinState = LOCK_PIN;
+    // check for pin high AND different from last time
+    // do the check for difference first so that you don't bother with a test
+    // of a port/variable that is not going to matter, since it hasn't changed
+    if ((CurrentPinState != LastPinState) &&
+            (CurrentPinState == LOCK_PIN_HI)) // event detected, so post detected event
+    {
+        ES_Event ThisEvent;
+        ThisEvent.EventType = ES_LOCK;
+        ThisEvent.EventParam = 1;
+        // this could be any of the service post functions, ES_PostListx or
+        // ES_PostAll functions
+        ES_PostAll(ThisEvent);
+        ReturnVal = true;
+    }
+    LastPinState = CurrentPinState; // update the state for next time
 
-  return ReturnVal;
+    return ReturnVal;
 }
 
 #endif
@@ -94,8 +89,7 @@ bool Check4Lock(void)
  Returns
    bool: true if a new key was detected & posted
  Description
-   checks to see if a new key from the keyboard is detected and, if so,
-   retrieves the key and posts an ES_NewKey event to TestHarnessService0
+ checks for falling and rising edges on RA4 aka Morse Input 
  Notes
    The functions that actually check the serial hardware for characters
    and retrieve them are assumed to be in ES_Port.c
@@ -105,17 +99,27 @@ bool Check4Lock(void)
    do not internally keep track of the last keystroke that we retrieved.
  Author
    J. Edward Carryer, 08/06/13, 13:48
-****************************************************************************/
-bool Check4Keystroke(void)
-{
-  if (IsNewKeyReady())   // new key waiting?
-  {
-    ES_Event_t ThisEvent;
-    ThisEvent.EventType   = ES_NEW_KEY;
-    ThisEvent.EventParam  = GetNewKey();
-    ES_PostAll(ThisEvent);
-    return true;
-  }
-  return false;
+ ****************************************************************************/
+bool Check4Morse(void) {
+    static unsigned char prev_state = 0;
+    unsigned char cur_state = PORTAbits.RA4;
+    bool returnVal = false;
+
+    if ((prev_state != cur_state) && (cur_state == 0)) {
+       struct ES_Event ThisEvent;
+        ThisEvent.EventType = MORSE_FALL;
+        PostMorseService(ThisEvent);
+        returnVal = true;
+    }
+    if ((prev_state != cur_state) && (cur_state == 1)) {
+       struct ES_Event ThisEvent;
+        ThisEvent.EventType = MORSE_RISE;
+        ThisEvent.EventParam =  ES_Timer_GetTime(); 
+        PostMorseService(ThisEvent);
+        returnVal = true;
+    }
+    prev_state = cur_state;
+    return returnVal;
+
 }
 

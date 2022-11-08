@@ -19,7 +19,7 @@
                          functionality out of the framework and putting it
                          explicitly into the event checking functions
  01/15/12 10:03 jec      started coding
-*****************************************************************************/
+ *****************************************************************************/
 
 #ifndef ES_CONFIGURE_H
 #define ES_CONFIGURE_H
@@ -41,11 +41,11 @@
 // services are added in numeric sequence (1,2,3,...) with increasing
 // priorities
 // the header file with the public function prototypes
-#define SERV_0_HEADER "TestHarnessService0.h"
+#define SERV_0_HEADER "MorseService.h"
 // the name of the Init function
-#define SERV_0_INIT InitTestHarnessService0
+#define SERV_0_INIT InitMorseService
 // the name of the run function
-#define SERV_0_RUN RunTestHarnessService0
+#define SERV_0_RUN RunMorseService
 // How big should this services Queue be?
 #define SERV_0_QUEUE_SIZE 5
 
@@ -251,18 +251,18 @@
 /****************************************************************************/
 // Name/define the events of interest
 // Universal events occupy the lowest entries, followed by user-defined events
-typedef enum
-{
-  ES_NO_EVENT = 0,
-  ES_ERROR,                 /* used to indicate an error from the service */
-  ES_INIT,                  /* used to transition from initial pseudo-state */
-  ES_TIMEOUT,               /* signals that the timer has expired */
-  ES_SHORT_TIMEOUT,         /* signals that a short timer has expired */
-  /* User-defined events start here */
-  ES_NEW_KEY,               /* signals a new key received from terminal */
-  ES_LOCK,
-  ES_UNLOCK
-}ES_EventType_t;
+
+typedef enum {
+    ES_NO_EVENT = 0,
+    ES_ERROR, /* used to indicate an error from the service */
+    ES_INIT, /* used to transition from initial pseudo-state */
+    ES_TIMEOUT, /* signals that the timer has expired */
+    ES_SHORT_TIMEOUT, /* signals that a short timer has expired */
+    /* User-defined events start here */
+    MORSE_FALL,
+    MORSE_RISE,
+    CALIBRATION_COMPLETE
+} ES_EventType_t;
 
 /****************************************************************************/
 // These are the definitions for the Distribution lists. Each definition
@@ -296,7 +296,7 @@ typedef enum
 
 /****************************************************************************/
 // This is the list of event checking functions
-#define EVENT_CHECK_LIST Check4Keystroke
+#define EVENT_CHECK_LIST Check4Morse
 
 /****************************************************************************/
 // These are the definitions for the post functions to be executed when the
@@ -320,7 +320,7 @@ typedef enum
 #define TIMER12_RESP_FUNC TIMER_UNUSED
 #define TIMER13_RESP_FUNC TIMER_UNUSED
 #define TIMER14_RESP_FUNC TIMER_UNUSED
-#define TIMER15_RESP_FUNC PostTestHarnessService0
+#define TIMER15_RESP_FUNC PostMorseService
 
 /****************************************************************************/
 // Give the timer numbers symbolc names to make it easier to move them

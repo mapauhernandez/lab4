@@ -3,9 +3,10 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/J:/DevProjects/2021Projects/Framework4PIC32_2021/ProjectSource/TestHarnessService0.c</file>
-            <file>file:/J:/DevProjects/2021Projects/Framework4PIC32_2021/ProjectSource/main.c</file>
-            <file>file:/J:/DevProjects/2021Projects/Framework4PIC32_2021/FrameworkSource/dbprintf.c</file>
+            <file>file:/Users/mariapaulahernandezfernandez/Desktop/framework4pic32_2021/ProjectSource/MorseService.c</file>
+            <file>file:/Users/mariapaulahernandezfernandez/Desktop/framework4pic32_2021/FrameworkSource/ES_Timers.c</file>
+            <file>file:/Users/mariapaulahernandezfernandez/Desktop/framework4pic32_2021/ProjectHeaders/MorseService.h</file>
+            <file>file:/Users/mariapaulahernandezfernandez/Desktop/framework4pic32_2021/FrameworkHeaders/ES_Configure.h</file>
         </group>
     </open-files>
 </project-private>
