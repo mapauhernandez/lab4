@@ -43,6 +43,7 @@
                    projectFiles="true">
       <itemPath>ProjectHeaders/MorseService.h</itemPath>
       <itemPath>ProjectHeaders/ButtonModule.h</itemPath>
+      <itemPath>ProjectHeaders/MorseDecode.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -54,6 +55,7 @@
       <itemPath>ProjectSource/main.c</itemPath>
       <itemPath>ProjectSource/MorseService.c</itemPath>
       <itemPath>ProjectSource/ButtonModule.c</itemPath>
+      <itemPath>ProjectSource/MorseDecode.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"

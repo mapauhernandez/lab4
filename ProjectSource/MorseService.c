@@ -1,6 +1,6 @@
 /****************************************************************************
  Module
-   TestHarnessService0.c
+   MorseService.c
 
  Revision
    1.0.1
@@ -14,6 +14,7 @@
 /*----------------------------- Include Files -----------------------------*/
 // This module
 #include "../ProjectHeaders/MorseService.h"
+#include "../ProjectHeaders/MorseDecode.h"
 
 // Hardware
 #include <xc.h>
@@ -303,25 +304,25 @@ void CharacterizeSpace(void) {
 
     if ((LastInterval != LengthOfDot) && (LastInterval != (LengthOfDot + 1))) { //if last interval not ok for dot space 
         if ((LastInterval >= 3 * LengthOfDot) && (LastInterval <= 3 * (LengthOfDot + 1))) { //if last interval ok for charcter space 
-            //TODO: PostEvent EOCDetected Event to Decode Morse Service
             struct ES_Event ThisEvent;
             ThisEvent.EventType = EOC_DETECTED;
             PostMorseService(ThisEvent);
-            DB_printf("/");
+            PostMorseDecode(ThisEvent);
+
 
 
         } else {
             if ((LastInterval >= 7 * LengthOfDot) && (LastInterval <= 7 * (LengthOfDot + 1))) { //if last interval ok for word space 
-                //TODO: PostEvent EOWDetected Event to Decode Morse Service 
                 struct ES_Event ThisEvent;
                 ThisEvent.EventType = EOW_DETECTED;
                 PostMorseService(ThisEvent);
-                DB_printf("      ");
+                PostMorseDecode(ThisEvent);
 
             } else {
-                DB_printf("BAD");
-
-                //TODO:  PostEvent BadPulse Event to Decode Morse Service
+                struct ES_Event ThisEvent;
+                ThisEvent.EventType = BAD_SPACE;
+                PostMorseService(ThisEvent);
+                PostMorseDecode(ThisEvent);
 
             }
         }
@@ -332,18 +333,21 @@ void CharacterizePulse(void) {
     uint16_t LastPulseWidth = TimeOfLastFall - TimeOfLastRise;
     struct ES_Event Event2Post;
     if ((LastPulseWidth == LengthOfDot) || (LastPulseWidth == (LengthOfDot + 1))) {//if last interval ok for dot  
-        //TODO: PostEvent DotDetected Event to Decode Morse Service
-        DB_printf(".");
+        struct ES_Event ThisEvent;
+        ThisEvent.EventType = DOT_DETECTED;
+        PostMorseDecode(ThisEvent);
 
     } else {
         if ((LastPulseWidth >= 3 * LengthOfDot) && (LastPulseWidth <= 3 * (LengthOfDot + 1))) { //if last interval ok for dash  
-            //TODO: PostEvent DashDetected Event to Decode Morse Service
-            DB_printf("-");
+            struct ES_Event ThisEvent;
+            ThisEvent.EventType = DASH_DETECTED;
+            PostMorseDecode(ThisEvent);
 
         } else {
-            DB_printf("BAD");
-
-            //TODO:  PostEvent BadPulse Event to Decode Morse Service
+            struct ES_Event ThisEvent;
+            ThisEvent.EventType = BAD_PULSE;
+            PostMorseService(ThisEvent);
+            PostMorseDecode(ThisEvent);
         }
     }
 }
