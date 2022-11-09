@@ -4,8 +4,8 @@
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
             <file>file:/Users/mariapaulahernandezfernandez/Desktop/framework4pic32_2021/ProjectSource/MorseService.c</file>
-            <file>file:/Users/mariapaulahernandezfernandez/Desktop/framework4pic32_2021/FrameworkSource/ES_Timers.c</file>
-            <file>file:/Users/mariapaulahernandezfernandez/Desktop/framework4pic32_2021/ProjectHeaders/MorseService.h</file>
+            <file>file:/Users/mariapaulahernandezfernandez/Desktop/framework4pic32_2021/LED_Service.c</file>
+            <file>file:/Users/mariapaulahernandezfernandez/Desktop/framework4pic32_2021/ProjectSource/MorseDecode.c</file>
             <file>file:/Users/mariapaulahernandezfernandez/Desktop/framework4pic32_2021/FrameworkHeaders/ES_Configure.h</file>
         </group>
     </open-files>

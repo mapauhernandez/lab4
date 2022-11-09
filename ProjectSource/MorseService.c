@@ -185,7 +185,7 @@ ES_Event_t RunMorseService(ES_Event_t ThisEvent) {
                 CharacterizeSpace();
             }
             if (ThisEvent.EventType == BUTTON_DOWN) {
-                DB_printf("Recalibrating....\n");
+                DB_printf("\nRecalibrating....\n");
 
                 NextState = CalWaitForRise;
                 FirstDelta = 0;
@@ -199,7 +199,7 @@ ES_Event_t RunMorseService(ES_Event_t ThisEvent) {
                 NextState = EOC_WaitRise;
             }
             if (ThisEvent.EventType == BUTTON_DOWN) {
-                DB_printf("Recalibrating....\n");
+                DB_printf("\nRecalibrating....\n");
                 NextState = CalWaitForRise;
                 FirstDelta = 0;
             }
@@ -216,7 +216,7 @@ ES_Event_t RunMorseService(ES_Event_t ThisEvent) {
                 CharacterizeSpace();
             }
             if (ThisEvent.EventType == BUTTON_DOWN) {
-                DB_printf("Recalibrating....\n");
+                DB_printf("\nRecalibrating....\n");
                 NextState = CalWaitForRise;
                 FirstDelta = 0;
             }
@@ -319,6 +319,7 @@ void CharacterizeSpace(void) {
                 PostMorseDecode(ThisEvent);
 
             } else {
+                DB_printf("Length of bad space: %d\n", LastInterval); 
                 struct ES_Event ThisEvent;
                 ThisEvent.EventType = BAD_SPACE;
                 PostMorseService(ThisEvent);

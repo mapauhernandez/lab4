@@ -14,6 +14,7 @@
 /*----------------------------- Include Files -----------------------------*/
 // This module
 #include "../ProjectHeaders/MorseDecode.h"
+#include "../ProjectHeaders/LEDService.h"
 
 // Hardware
 #include <xc.h>
@@ -149,7 +150,11 @@ ES_Event_t RunMorseDecode(ES_Event_t ThisEvent) {
         case EOC_DETECTED:
         {
             char cur = DecodeMorseString();
-            //TODO: print to LCD screen
+            struct ES_Event ThisEvent;
+            ThisEvent.EventType = ES_NEW_KEY;
+            ThisEvent.EventParam = cur;
+
+            PostLED(ThisEvent);
             DB_printf("%c", cur);
             MorseString[0] = '\0';
         }
@@ -157,9 +162,14 @@ ES_Event_t RunMorseDecode(ES_Event_t ThisEvent) {
         case EOW_DETECTED:
         {
             char cur = DecodeMorseString();
-            //TODO: print to LCD screen char
-            //TODO: print to LCD screen space
+            struct ES_Event ThisEvent;
+            ThisEvent.EventType = ES_NEW_KEY;
+            ThisEvent.EventParam = cur;
+            PostLED(ThisEvent);
 
+            ThisEvent.EventType = ES_NEW_KEY;
+            ThisEvent.EventParam = ' ';
+            PostLED(ThisEvent);
             DB_printf("%c ", cur);
 
             MorseString[0] = '\0';
