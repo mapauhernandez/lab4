@@ -261,7 +261,11 @@ typedef enum {
     /* User-defined events start here */
     MORSE_FALL,
     MORSE_RISE,
-    CALIBRATION_COMPLETE
+    CALIBRATION_COMPLETE,
+    BUTTON_DOWN,
+    EOC_DETECTED,
+    EOW_DETECTED,
+    BAD_WORD
 } ES_EventType_t;
 
 /****************************************************************************/
@@ -296,7 +300,7 @@ typedef enum {
 
 /****************************************************************************/
 // This is the list of event checking functions
-#define EVENT_CHECK_LIST Check4Morse
+#define EVENT_CHECK_LIST Check4Morse, Check4Button
 
 /****************************************************************************/
 // These are the definitions for the post functions to be executed when the

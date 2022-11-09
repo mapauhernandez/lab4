@@ -26,6 +26,7 @@
 #include "ES_Port.h"
 #include "terminal.h"
 #include "dbprintf.h"
+#include "ButtonModule.h"
 
 /*----------------------------- Module Defines ----------------------------*/
 // these times assume a 10.000mS/tick timing
@@ -42,10 +43,12 @@
 /*---------------------------- Module Functions ---------------------------*/
 bool Check4Morse(void); //prototype for checker function 
 void TestCalibration(void);
+void CharacterizeSpace(void);
+void CharacterizePulse(void);
 
 /*---------------------------- Module Variables ---------------------------*/
 enum state {
-    InitMorseElements, CalWaitForRise, CalWaitForFall, EOC_WaitRise
+    InitMorseElements, CalWaitForRise, CalWaitForFall, EOC_WaitRise, EOC_WaitFall, DecodeWaitFall, DecodeWaitRise
 };
 
 static uint8_t MyPriority;
@@ -85,14 +88,17 @@ bool InitMorseService(uint8_t Priority) {
     DB_printf("the 2nd Generation Events & Services Framework V2.4\r\n");
     DB_printf("compiled at %s on %s\n", __TIME__, __DATE__);
     DB_printf("\n\r\n");
-    DB_printf("Wait for Falling or Rising Morse Events\n\r");
+    DB_printf("Let's get started with calibration\n\r");
 
     //Initialize morse line to receive stuff: 
     TRISAbits.TRISA4 = 1; //set to output 
-
+    //Initialize button line to receive stuff: 
+    TRISAbits.TRISA3 = 1; //set to output 
     //Initialize global variables: 
     CurrentState = InitMorseElements;
     FirstDelta = 0;
+
+    InitButtonStatus();
 
     // post the initial transition event
     ThisEvent.EventType = ES_INIT;
@@ -138,41 +144,99 @@ ES_Event_t RunMorseService(ES_Event_t ThisEvent) {
     ReturnEvent.EventType = ES_NO_EVENT; // assume no errors
 
     uint16_t NextState = CurrentState;
-
     switch (CurrentState) {
         case InitMorseElements:
         {
             if (ThisEvent.EventType == ES_INIT) {
-                DB_printf("Got initialized!\n");
                 NextState = CalWaitForRise;
+                DB_printf("Calibrating....\n");
+
             }
         }
             break;
-        case CalWaitForRise: // announce
+        case CalWaitForRise:
         {
             if (ThisEvent.EventType == MORSE_RISE) {
                 TimeOfLastRise = ThisEvent.EventParam;
-                DB_printf("RISE, at %d\n", TimeOfLastRise);
 
                 NextState = CalWaitForFall;
             }
             if (ThisEvent.EventType == CALIBRATION_COMPLETE) {
-                DB_printf("Length of Dot: %d\n", LengthOfDot);
+                DB_printf("Length of dot: %d\n", LengthOfDot);
                 NextState = EOC_WaitRise;
             }
         }
             break;
-        case CalWaitForFall: // announce
+        case CalWaitForFall:
         {
             if (ThisEvent.EventType == MORSE_FALL) {
                 TimeOfLastFall = ThisEvent.EventParam;
-                DB_printf("FALL, at %d\n", TimeOfLastFall);
-
                 NextState = CalWaitForRise;
                 TestCalibration();
             }
         }
             break;
+        case EOC_WaitRise:
+        {
+            if (ThisEvent.EventType == MORSE_RISE) {
+                TimeOfLastRise = ThisEvent.EventParam;
+                NextState = EOC_WaitFall;
+                CharacterizeSpace();
+            }
+            if (ThisEvent.EventType == BUTTON_DOWN) {
+                DB_printf("Recalibrating....\n");
+
+                NextState = CalWaitForRise;
+                FirstDelta = 0;
+            }
+        }
+            break;
+        case EOC_WaitFall:
+        {
+            if (ThisEvent.EventType == MORSE_FALL) {
+                TimeOfLastFall = ThisEvent.EventParam;
+                NextState = EOC_WaitRise;
+            }
+            if (ThisEvent.EventType == BUTTON_DOWN) {
+                DB_printf("Recalibrating....\n");
+                NextState = CalWaitForRise;
+                FirstDelta = 0;
+            }
+            if (ThisEvent.EventType == EOC_DETECTED || ThisEvent.EventType == EOW_DETECTED) {
+                NextState = DecodeWaitFall;
+            }
+        }
+            break;
+        case DecodeWaitRise:
+        {
+            if (ThisEvent.EventType == MORSE_RISE) {
+                TimeOfLastRise = ThisEvent.EventParam;
+                NextState = DecodeWaitFall;
+                CharacterizeSpace();
+            }
+            if (ThisEvent.EventType == BUTTON_DOWN) {
+                DB_printf("Recalibrating....\n");
+                NextState = CalWaitForRise;
+                FirstDelta = 0;
+            }
+        }
+            break;
+
+        case DecodeWaitFall:
+        {
+            if (ThisEvent.EventType == MORSE_FALL) {
+                TimeOfLastFall = ThisEvent.EventParam;
+                NextState = DecodeWaitRise;
+                CharacterizePulse();
+            }
+            if (ThisEvent.EventType == BUTTON_DOWN) {
+                DB_printf("Recalibrating....\n");
+                NextState = CalWaitForRise;
+                FirstDelta = 0;
+            }
+        }
+            break;
+
         default:
         {
         }
@@ -214,8 +278,6 @@ void TestCalibration(void) {
         FirstDelta = TimeOfLastFall - TimeOfLastRise;
     } else {
         SecondDelta = TimeOfLastFall - TimeOfLastRise;
-        DB_printf("First Delta: %d \n", FirstDelta);
-        DB_printf("Second Delta: %d \n", SecondDelta);
 
         if (100.0 * FirstDelta / SecondDelta <= 33.33) {
             LengthOfDot = FirstDelta;
@@ -233,4 +295,55 @@ void TestCalibration(void) {
         }
     }
 
+}
+
+void CharacterizeSpace(void) {
+    uint16_t LastInterval = TimeOfLastRise - TimeOfLastFall;
+    struct ES_Event Event2Post;
+
+    if ((LastInterval != LengthOfDot) && (LastInterval != (LengthOfDot + 1))) { //if last interval not ok for dot space 
+        if ((LastInterval >= 3 * LengthOfDot) && (LastInterval <= 3 * (LengthOfDot + 1))) { //if last interval ok for charcter space 
+            //TODO: PostEvent EOCDetected Event to Decode Morse Service
+            struct ES_Event ThisEvent;
+            ThisEvent.EventType = EOC_DETECTED;
+            PostMorseService(ThisEvent);
+            DB_printf("/");
+
+
+        } else {
+            if ((LastInterval >= 7 * LengthOfDot) && (LastInterval <= 7 * (LengthOfDot + 1))) { //if last interval ok for word space 
+                //TODO: PostEvent EOWDetected Event to Decode Morse Service 
+                struct ES_Event ThisEvent;
+                ThisEvent.EventType = EOW_DETECTED;
+                PostMorseService(ThisEvent);
+                DB_printf("      ");
+
+            } else {
+                DB_printf("BAD");
+
+                //TODO:  PostEvent BadPulse Event to Decode Morse Service
+
+            }
+        }
+    }
+}
+
+void CharacterizePulse(void) {
+    uint16_t LastPulseWidth = TimeOfLastFall - TimeOfLastRise;
+    struct ES_Event Event2Post;
+    if ((LastPulseWidth == LengthOfDot) || (LastPulseWidth == (LengthOfDot + 1))) {//if last interval ok for dot  
+        //TODO: PostEvent DotDetected Event to Decode Morse Service
+        DB_printf(".");
+
+    } else {
+        if ((LastPulseWidth >= 3 * LengthOfDot) && (LastPulseWidth <= 3 * (LengthOfDot + 1))) { //if last interval ok for dash  
+            //TODO: PostEvent DashDetected Event to Decode Morse Service
+            DB_printf("-");
+
+        } else {
+            DB_printf("BAD");
+
+            //TODO:  PostEvent BadPulse Event to Decode Morse Service
+        }
+    }
 }

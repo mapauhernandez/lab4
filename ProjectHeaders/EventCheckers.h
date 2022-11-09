@@ -21,6 +21,7 @@
 
 // prototypes for event checkers
 
+bool Check4Button(void);
 bool Check4Morse(void);
 
 #endif /* EventCheckers_H */
