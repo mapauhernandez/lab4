@@ -171,7 +171,7 @@ ES_Event_t RunMorseService(ES_Event_t ThisEvent) {
         case CalWaitForFall:
         {
             if (ThisEvent.EventType == MORSE_FALL) {
-                TimeOfLastFall = ThisEvent.EventParam;
+                TimeOfLastFall = ThisEvent.EventParam-5;
                 NextState = CalWaitForRise;
                 TestCalibration();
             }
@@ -195,7 +195,7 @@ ES_Event_t RunMorseService(ES_Event_t ThisEvent) {
         case EOC_WaitFall:
         {
             if (ThisEvent.EventType == MORSE_FALL) {
-                TimeOfLastFall = ThisEvent.EventParam;
+                TimeOfLastFall = ThisEvent.EventParam-5 ;
                 NextState = EOC_WaitRise;
             }
             if (ThisEvent.EventType == BUTTON_DOWN) {
@@ -226,12 +226,12 @@ ES_Event_t RunMorseService(ES_Event_t ThisEvent) {
         case DecodeWaitFall:
         {
             if (ThisEvent.EventType == MORSE_FALL) {
-                TimeOfLastFall = ThisEvent.EventParam;
+                TimeOfLastFall = ThisEvent.EventParam -5 ;
                 NextState = DecodeWaitRise;
                 CharacterizePulse();
             }
             if (ThisEvent.EventType == BUTTON_DOWN) {
-                DB_printf("Recalibrating....\n");
+                DB_printf("\nRecalibrating....\n");
                 NextState = CalWaitForRise;
                 FirstDelta = 0;
             }
@@ -279,14 +279,14 @@ void TestCalibration(void) {
         FirstDelta = TimeOfLastFall - TimeOfLastRise;
     } else {
         SecondDelta = TimeOfLastFall - TimeOfLastRise;
-
-        if (100.0 * FirstDelta / SecondDelta <= 33.33) {
+        uint16_t diff = 100.0 * FirstDelta / SecondDelta;
+        //DB_printf("diff: %d\n", diff);
+        if (diff <= 34) {
             LengthOfDot = FirstDelta;
             struct ES_Event ThisEvent;
             ThisEvent.EventType = CALIBRATION_COMPLETE;
             PostMorseService(ThisEvent);
-
-        } else if (100.0 * FirstDelta / SecondDelta > 300) {
+        } else if (diff > 300) {
             LengthOfDot = SecondDelta;
             struct ES_Event ThisEvent;
             ThisEvent.EventType = CALIBRATION_COMPLETE;
@@ -299,27 +299,26 @@ void TestCalibration(void) {
 }
 
 void CharacterizeSpace(void) {
+
     uint16_t LastInterval = TimeOfLastRise - TimeOfLastFall;
     struct ES_Event Event2Post;
 
-    if ((LastInterval != LengthOfDot) && (LastInterval != (LengthOfDot + 1))) { //if last interval not ok for dot space 
-        if ((LastInterval >= 3 * LengthOfDot) && (LastInterval <= 3 * (LengthOfDot + 1))) { //if last interval ok for charcter space 
+    if ((LastInterval <= LengthOfDot - 10) || (LastInterval >= (LengthOfDot + 10))) {//if last interval ok for dot  
+        if ((LastInterval >= 3 * (LengthOfDot - 10)) && (LastInterval <= 3 * (LengthOfDot + 10))) { //if last interval ok for charcter space 
+
             struct ES_Event ThisEvent;
             ThisEvent.EventType = EOC_DETECTED;
             PostMorseService(ThisEvent);
             PostMorseDecode(ThisEvent);
 
-
-
         } else {
-            if ((LastInterval >= 7 * LengthOfDot) && (LastInterval <= 7 * (LengthOfDot + 1))) { //if last interval ok for word space 
+            if ((LastInterval >= 7 * (LengthOfDot - 10)) && (LastInterval <= 7 * (LengthOfDot + 10))) { //if last interval ok for word space 
                 struct ES_Event ThisEvent;
                 ThisEvent.EventType = EOW_DETECTED;
                 PostMorseService(ThisEvent);
                 PostMorseDecode(ThisEvent);
 
             } else {
-                DB_printf("Length of bad space: %d\n", LastInterval); 
                 struct ES_Event ThisEvent;
                 ThisEvent.EventType = BAD_SPACE;
                 PostMorseService(ThisEvent);
@@ -333,13 +332,13 @@ void CharacterizeSpace(void) {
 void CharacterizePulse(void) {
     uint16_t LastPulseWidth = TimeOfLastFall - TimeOfLastRise;
     struct ES_Event Event2Post;
-    if ((LastPulseWidth == LengthOfDot) || (LastPulseWidth == (LengthOfDot + 1))) {//if last interval ok for dot  
+    if ((LastPulseWidth >= LengthOfDot - 10) && (LastPulseWidth <= (LengthOfDot + 10))) {//if last interval ok for dot  
         struct ES_Event ThisEvent;
         ThisEvent.EventType = DOT_DETECTED;
         PostMorseDecode(ThisEvent);
 
     } else {
-        if ((LastPulseWidth >= 3 * LengthOfDot) && (LastPulseWidth <= 3 * (LengthOfDot + 1))) { //if last interval ok for dash  
+        if ((LastPulseWidth >= 3 * (LengthOfDot - 10)) && (LastPulseWidth <= 3 * (LengthOfDot + 10))) { //if last interval ok for dash  
             struct ES_Event ThisEvent;
             ThisEvent.EventType = DASH_DETECTED;
             PostMorseDecode(ThisEvent);
@@ -349,6 +348,7 @@ void CharacterizePulse(void) {
             ThisEvent.EventType = BAD_PULSE;
             PostMorseService(ThisEvent);
             PostMorseDecode(ThisEvent);
+
         }
     }
 }

@@ -123,6 +123,7 @@ ES_Event_t RunMorseDecode(ES_Event_t ThisEvent) {
     switch (ThisEvent.EventType) {
         case DOT_DETECTED:
         {
+
             uint16_t index = strlen(MorseString);
             if (index < 6) { //if the dot fits
                 MorseString[index] = '.';

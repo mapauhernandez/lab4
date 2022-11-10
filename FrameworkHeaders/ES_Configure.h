@@ -270,7 +270,8 @@ typedef enum {
     DASH_DETECTED,
     BAD_PULSE,
     ES_NEW_KEY,
-    ES_LED_EVENT
+    UPDATE_ROW,
+    FINISHED_UPDATE
 } ES_EventType_t;
 
 /****************************************************************************/

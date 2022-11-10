@@ -50,6 +50,11 @@ static uint8_t MyPriority;
 // add a deferral queue for up to 3 pending deferrals +1 to allow for overhead
 static ES_Event_t DeferralQueue[3 + 1];
 
+enum state {
+    InitLED, Ready4Char, Updating
+};
+static uint16_t CurrentState;
+
 /*------------------------------ Module Code ------------------------------*/
 
 /****************************************************************************
@@ -113,7 +118,10 @@ bool InitLEDService(uint8_t Priority) {
     SPISetup_EnableSPI(SPI_SPI1);
 
     // initialize deferral queue
-    // ES_InitDeferralQueueWith(DeferralQueue, ARRAY_SIZE(DeferralQueue));
+
+    ES_InitDeferralQueueWith(DeferralQueue, ARRAY_SIZE(DeferralQueue));
+    CurrentState = InitLED;
+
     ThisEvent.EventType = ES_INIT;
     if (ES_PostToService(MyPriority, ThisEvent) == true) {
         return true;
@@ -160,20 +168,49 @@ ES_Event_t RunLEDService(ES_Event_t ThisEvent) {
     ES_Event_t ReturnEvent;
     ReturnEvent.EventType = ES_NO_EVENT; // assume no errors
 
-    switch (ThisEvent.EventType) {
-        case ES_INIT: // announce
-        {
+    uint16_t NextState = CurrentState;
 
-            while (false == DM_TakeInitDisplayStep()) {
+    switch (CurrentState) {
+        case InitLED: // announce
+        {
+            if (ThisEvent.EventType == ES_INIT) {
+                while (false == DM_TakeInitDisplayStep()) {
+                }
+                NextState = Ready4Char;
             }
 
         }
             break;
-        case ES_NEW_KEY: // announce
+        case Ready4Char:
         {
-            DM_ScrollDisplayBuffer(4);
-            DM_AddChar2DisplayBuffer(ThisEvent.EventParam);
-            while (false == DM_TakeDisplayUpdateStep()) {
+
+            if (ThisEvent.EventType == ES_NEW_KEY) {
+                DM_ScrollDisplayBuffer(4);
+                DM_AddChar2DisplayBuffer(ThisEvent.EventParam);
+                NextState = Updating;
+                struct ES_Event ThisEvent;
+                ThisEvent.EventType = UPDATE_ROW;
+                PostLED(ThisEvent);
+            }
+
+        }
+            break;
+        case Updating:
+        {
+            if (ThisEvent.EventType == ES_NEW_KEY) { //if we get a new key here add to deferral queue
+                ES_DeferEvent(DeferralQueue, ThisEvent);
+            }
+            if (true == DM_TakeDisplayUpdateStep()) {
+                NextState = Ready4Char;
+                ES_RecallEvents(MyPriority, DeferralQueue);
+                struct ES_Event ThisEvent;
+                ThisEvent.EventType = FINISHED_UPDATE;
+                PostLED(ThisEvent);
+            } else {
+                NextState = Updating;
+                struct ES_Event ThisEvent;
+                ThisEvent.EventType = UPDATE_ROW;
+                PostLED(ThisEvent);
             }
 
         }
@@ -183,6 +220,7 @@ ES_Event_t RunLEDService(ES_Event_t ThisEvent) {
         }
             break;
     }
+    CurrentState = NextState;
 
     return ReturnEvent;
 }
